@@ -27,7 +27,7 @@ export class BuildConfiguration {
   characterClass: CharacterClass = CharacterClass.Titan;
 
   // Add constant +1 strength
-  addConstent1Resilience = false;
+  addConstant1Resilience = false;
 
   // contains a list of item instances IDs that shall not be used in builds
   disabledItems: string[] = [];
@@ -97,7 +97,7 @@ export class BuildConfiguration {
     return {
       enabledMods: [],
       disabledItems: [],
-      addConstent1Resilience: false,
+      addConstant1Resilience: false,
       ignoreArmorAffinitiesOnMasterworkedItems: false,
       maximumStatMods: MAXIMUM_STAT_MOD_AMOUNT,
       onlyUseMasterworkedItems: false,

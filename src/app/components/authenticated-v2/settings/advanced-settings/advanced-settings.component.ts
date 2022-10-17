@@ -151,8 +151,8 @@ export class AdvancedSettingsComponent implements OnInit, OnDestroy {
           "Data-Science": [
             {
               name: "Add a constant +1 resilience to the results with non-exotic chests. For.. reasons..",
-              cp: (v: boolean) => this.config.modifyConfiguration(c => c.addConstent1Resilience = v),
-              value: c.addConstent1Resilience,
+              cp: (v: boolean) => this.config.modifyConfiguration(c => c.addConstant1Resilience = v),
+              value: c.addConstant1Resilience,
               disabled: false,
               impactsResultCount: false,
               help: "You usually do not want to use this."

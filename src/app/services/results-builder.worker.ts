@@ -1,168 +1,38 @@
-import {BuildConfiguration} from "../data/buildConfiguration";
-import {IInventoryArmor} from "../data/types/IInventoryArmor";
-import {buildDb} from "../data/database";
-import {ArmorSlot} from "../data/enum/armor-slot";
-import {FORCE_USE_NO_EXOTIC} from "../data/constants";
-import {ModInformation} from "../data/ModInformation";
-import {ArmorPerkOrSlot, ArmorStat, SpecialArmorStat, STAT_MOD_VALUES, StatModifier} from "../data/enum/armor-stat";
-import {IManifestArmor} from "../data/types/IManifestArmor";
-import {DestinyEnergyType, TierType} from "bungie-api-ts/destiny2";
-
-declare global {
-  interface Array<T> {
-    where(o: (val: T) => boolean): T[];
-
-    addSorted(o: T): T[];
-  }
-}
-
-Array.prototype.addSorted = function (element: any) {
-  var i = 0;
-  var j = this.length;
-  var h;
-  var c = false;
-  if (element > this[j]) {
-    this.push(element);
-    return this;
-  }
-  if (element < this[i]) {
-    this.splice(i, 0, element);
-    return this;
-  }
-  while (c == false) {
-    h = ~~((i + j) / 2); //a faster h=Math.floor((i+j)/2);
-    if (element > this[h]) {
-      i = h;
-    } else {
-      j = h;
-    }
-    if (j - i <= 1) {
-      this.splice(j, 0, element);
-      c = true;
-    }
-  }
-  return this;
-};
-
-
-Array.prototype.where = Array.prototype.where || function (predicate: any) {
-  var results = [],
-    // @ts-ignore
-    len = this.length,
-    i = 0;
-
-  for (; i < len; i++) {
-    // @ts-ignore
-    var item = this[i];
-    if (predicate(item)) {
-      results.push(item);
-    }
-  }
-
-  return results;
-};
+import { BuildConfiguration } from "../data/buildConfiguration";
+import { IInventoryArmor } from "../data/types/IInventoryArmor";
+import { buildDb } from "../data/database";
+import { ArmorSlot } from "../data/enum/armor-slot";
+import { FORCE_USE_NO_EXOTIC } from "../data/constants";
+import { ModInformation } from "../data/ModInformation";
+import { ArmorPerkOrSlot, ArmorStat, SpecialArmorStat, STAT_MOD_VALUES, StatModifier } from "../data/enum/armor-stat";
+import { IManifestArmor } from "../data/types/IManifestArmor";
+import { DestinyEnergyType, TierType } from "bungie-api-ts/destiny2";
 
 const db = buildDb(async () => {
 })
 const inventoryArmor = db.table("inventoryArmor");
 const manifestArmor = db.table("manifestArmor");
 
-interface MinMaxSum {
-  min: number;
-  max: number;
-  sum: number;
-}
-
-// Represents one item, or the combined range of two items
-class ItemCombination {
-  items: IInventoryArmor[] = [];
-
-  mobility: MinMaxSum = {min: 0, max: 0, sum: 0}
-  resilience: MinMaxSum = {min: 0, max: 0, sum: 0}
-  recovery: MinMaxSum = {min: 0, max: 0, sum: 0}
-  discipline: MinMaxSum = {min: 0, max: 0, sum: 0}
-  intellect: MinMaxSum = {min: 0, max: 0, sum: 0}
-  strength: MinMaxSum = {min: 0, max: 0, sum: 0}
-
-  readonly containsExotics: boolean = false;
-  readonly containsLegendaries: boolean = false;
-  readonly allMasterworked: boolean = false;
-
-  readonly elements: DestinyEnergyType[] = [];
-  readonly perks: ArmorPerkOrSlot[] = [];
-  readonly allSameElement: boolean = true;
-
-  constructor(items: IInventoryArmor[]) {
-    this.items = items;
-
-    const mobility = this.items.map(d => d.mobility);
-    const resilience = this.items.map(d => d.resilience);
-    const recovery = this.items.map(d => d.recovery);
-    const discipline = this.items.map(d => d.discipline);
-    const intellect = this.items.map(d => d.intellect);
-    const strength = this.items.map(d => d.strength);
-
-    this.mobility.min = Math.min(...mobility)
-    this.mobility.sum = mobility.reduce((p, v) => p + v, 0)
-
-    this.resilience.min = Math.min(...resilience)
-    this.resilience.sum = resilience.reduce((p, v) => p + v, 0)
-
-    this.recovery.min = Math.min(...recovery)
-    this.recovery.sum = recovery.reduce((p, v) => p + v, 0)
-
-    this.discipline.min = Math.min(...discipline)
-    this.discipline.sum = discipline.reduce((p, v) => p + v, 0)
-
-    this.intellect.min = Math.min(...intellect)
-    this.intellect.sum = intellect.reduce((p, v) => p + v, 0)
-
-    this.strength.min = Math.min(...strength)
-    this.strength.sum = strength.reduce((p, v) => p + v, 0)
-
-    this.containsExotics = this._containsExotics;
-    this.containsLegendaries = this._containsLegendaries;
-    this.allMasterworked = this._allMasterworked;
-
-    this.elements = items.map(d => d.energyAffinity)
-    this.perks = items.map(d => d.perk)
-    this.allSameElement = new Set(items).size == 1
-  }
-
-  private get _containsExotics() {
-    return this.items.filter(i => i.isExotic).length > 0
-  }
-
-  private get _containsLegendaries() {
-    return this.items.filter(i => !i.isExotic).length > 0
-  }
-
-  private get _allMasterworked() {
-    return this.items.filter(i => i.masterworked).length == this.items.length
-  }
-}
-
-
 function checkElements(config: BuildConfiguration, constantElementRequirements: number[], availableClassElements: Set<DestinyEnergyType>,
-                       helmet: ItemCombination, gauntlet: ItemCombination, chest: ItemCombination, leg: ItemCombination) {
+                       helmet: IInventoryArmor, gauntlet: IInventoryArmor, chest: IInventoryArmor, leg: IInventoryArmor) {
   let requirements = constantElementRequirements.slice()
   let wildcard = requirements[0]
 
-  if ((helmet.allMasterworked && config.ignoreArmorAffinitiesOnMasterworkedItems)
-    || (!helmet.allMasterworked && config.ignoreArmorAffinitiesOnNonMasterworkedItems)) wildcard++;
-  else requirements[helmet.elements[0]]--;
+  if ((helmet.masterworked && config.ignoreArmorAffinitiesOnMasterworkedItems)
+    || (!helmet.masterworked && config.ignoreArmorAffinitiesOnNonMasterworkedItems)) wildcard++;
+  else requirements[helmet.energyAffinity]--;
 
-  if ((gauntlet.allMasterworked && config.ignoreArmorAffinitiesOnMasterworkedItems)
-    || (!gauntlet.allMasterworked && config.ignoreArmorAffinitiesOnNonMasterworkedItems)) wildcard++;
-  else requirements[gauntlet.elements[0]]--;
+  if ((gauntlet.masterworked && config.ignoreArmorAffinitiesOnMasterworkedItems)
+    || (!gauntlet.masterworked && config.ignoreArmorAffinitiesOnNonMasterworkedItems)) wildcard++;
+  else requirements[gauntlet.energyAffinity]--;
 
-  if ((chest.allMasterworked && config.ignoreArmorAffinitiesOnMasterworkedItems)
-    || (!chest.allMasterworked && config.ignoreArmorAffinitiesOnNonMasterworkedItems)) wildcard++;
-  else requirements[chest.elements[0]]--;
+  if ((chest.masterworked && config.ignoreArmorAffinitiesOnMasterworkedItems)
+    || (!chest.masterworked && config.ignoreArmorAffinitiesOnNonMasterworkedItems)) wildcard++;
+  else requirements[chest.energyAffinity]--;
 
-  if ((leg.allMasterworked && config.ignoreArmorAffinitiesOnMasterworkedItems)
-    || (!leg.allMasterworked && config.ignoreArmorAffinitiesOnNonMasterworkedItems)) wildcard++;
-  else requirements[leg.elements[0]]--;
+  if ((leg.masterworked && config.ignoreArmorAffinitiesOnMasterworkedItems)
+    || (!leg.masterworked && config.ignoreArmorAffinitiesOnNonMasterworkedItems)) wildcard++;
+  else requirements[leg.energyAffinity]--;
 
 //  if (config.armorAffinities[ArmorSlot.ArmorSlotClass].value == DestinyEnergyType.Any)
 //    wildcard++;
@@ -197,42 +67,42 @@ function checkElements(config: BuildConfiguration, constantElementRequirements: 
 }
 
 function checkSlots(config: BuildConfiguration, constantModslotRequirement: number[], availableClassItemTypes: Set<ArmorPerkOrSlot>,
-                    helmet: ItemCombination, gauntlet: ItemCombination, chest: ItemCombination, leg: ItemCombination) {
+                    helmet: IInventoryArmor, gauntlet: IInventoryArmor, chest: IInventoryArmor, leg: IInventoryArmor) {
 
   var exoticId = config.selectedExotics[0] || 0
   let requirements = constantModslotRequirement.slice()
-  if ((exoticId <= 0 || (helmet.items[0].hash != exoticId))
+  if ((exoticId <= 0 || (helmet.hash != exoticId))
     && config.armorPerks[ArmorSlot.ArmorSlotHelmet].fixed && config.armorPerks[ArmorSlot.ArmorSlotHelmet].value != ArmorPerkOrSlot.None
-    && config.armorPerks[ArmorSlot.ArmorSlotHelmet].value != helmet.perks[0])
+    && config.armorPerks[ArmorSlot.ArmorSlotHelmet].value != helmet.perk)
     return {valid: false};
-  if ((exoticId <= 0 || (gauntlet.items[0].hash != exoticId))
+  if ((exoticId <= 0 || (gauntlet.hash != exoticId))
     && config.armorPerks[ArmorSlot.ArmorSlotGauntlet].fixed && config.armorPerks[ArmorSlot.ArmorSlotGauntlet].value != ArmorPerkOrSlot.None
-    && config.armorPerks[ArmorSlot.ArmorSlotGauntlet].value != gauntlet.perks[0])
+    && config.armorPerks[ArmorSlot.ArmorSlotGauntlet].value != gauntlet.perk)
     return {valid: false};
-  if ((exoticId <= 0 || (chest.items[0].hash != exoticId))
+  if ((exoticId <= 0 || (chest.hash != exoticId))
     && config.armorPerks[ArmorSlot.ArmorSlotChest].fixed && config.armorPerks[ArmorSlot.ArmorSlotChest].value != ArmorPerkOrSlot.None
-    && config.armorPerks[ArmorSlot.ArmorSlotChest].value != chest.perks[0])
+    && config.armorPerks[ArmorSlot.ArmorSlotChest].value != chest.perk)
     return {valid: false};
-  if ((exoticId <= 0 || (leg.items[0].hash != exoticId))
+  if ((exoticId <= 0 || (leg.hash != exoticId))
     && config.armorPerks[ArmorSlot.ArmorSlotLegs].fixed && config.armorPerks[ArmorSlot.ArmorSlotLegs].value != ArmorPerkOrSlot.None
-    && config.armorPerks[ArmorSlot.ArmorSlotLegs].value != leg.perks[0])
+    && config.armorPerks[ArmorSlot.ArmorSlotLegs].value != leg.perk)
     return {valid: false};
   // also return if we can not find the correct class item. pepepoint.
   if (config.armorPerks[ArmorSlot.ArmorSlotClass].fixed && config.armorPerks[ArmorSlot.ArmorSlotClass].value != ArmorPerkOrSlot.None
     && !availableClassItemTypes.has(config.armorPerks[ArmorSlot.ArmorSlotClass].value))
     return {valid: false};
 
-  requirements[helmet.perks[0]]--;
-  requirements[gauntlet.perks[0]]--;
-  requirements[chest.perks[0]]--;
-  requirements[leg.perks[0]]--;
+  requirements[helmet.perk]--;
+  requirements[gauntlet.perk]--;
+  requirements[chest.perk]--;
+  requirements[leg.perk]--;
 
   // ignore exotic selection
   if (exoticId > 0) {
-    if (helmet.items[0].hash == exoticId) requirements[config.armorPerks[helmet.items[0].slot].value]--;
-    else if (gauntlet.items[0].hash == exoticId) requirements[config.armorPerks[gauntlet.items[0].slot].value]--;
-    else if (chest.items[0].hash == exoticId) requirements[config.armorPerks[chest.items[0].slot].value]--;
-    else if (leg.items[0].hash == exoticId) requirements[config.armorPerks[leg.items[0].slot].value]--;
+    if (helmet.hash == exoticId) requirements[config.armorPerks[helmet.slot].value]--;
+    else if (gauntlet.hash == exoticId) requirements[config.armorPerks[gauntlet.slot].value]--;
+    else if (chest.hash == exoticId) requirements[config.armorPerks[chest.slot].value]--;
+    else if (leg.hash == exoticId) requirements[config.armorPerks[leg.slot].value]--;
   }
 
   let bad = 0;
@@ -287,7 +157,7 @@ function prepareConstantElementRequirement(config: BuildConfiguration) {
   if (!config.armorAffinities[ArmorSlot.ArmorSlotClass].fixed)
     constantElementRequirement[config.armorAffinities[ArmorSlot.ArmorSlotClass].value]++;
 
-  constantElementRequirement[0]=0
+  constantElementRequirement[0] = 0
   return constantElementRequirement;
 }
 
@@ -310,7 +180,7 @@ function prepareConstantAvailableModslots(config: BuildConfiguration) {
   availableModCost.push(config.maximumModSlots[ArmorSlot.ArmorSlotChest].value)
   availableModCost.push(config.maximumModSlots[ArmorSlot.ArmorSlotLegs].value)
   availableModCost.push(config.maximumModSlots[ArmorSlot.ArmorSlotClass].value)
-  return availableModCost.where(d => d > 0).sort()
+  return availableModCost.filter(d => d > 0).sort()
 }
 
 addEventListener('message', async ({data}) => {
@@ -320,16 +190,21 @@ addEventListener('message', async ({data}) => {
   const config = data.config as BuildConfiguration;
   console.log("Using config", data.config)
 
-  let selectedExotics: IManifestArmor[] = await Promise.all(config.selectedExotics
+  // this gets the selected exotic hash or none (Option<Hash>?)
+  let selectedExotics2: IManifestArmor[] = await Promise.all(config.selectedExotics
     .filter(hash => hash != FORCE_USE_NO_EXOTIC)
     .map(async hash => await manifestArmor.where("hash").equals(hash).first()))
-  selectedExotics= selectedExotics.filter(i => !!i)
+  selectedExotics2 = selectedExotics2.filter(i => !!i)
+  let selectedExotic: IManifestArmor | null = null;
+  if (selectedExotics2.length > 0) selectedExotic = selectedExotics2[0];
 
+  // use items for the correct class only
   // let exoticItemInfo = config.selectedExotics.length == 0    ? null    : await inventoryArmor.where("hash").equals(config.selectedExotics[0]).first() as IInventoryArmor
   let items = (await inventoryArmor.where("clazz").equals(config.characterClass)
     .distinct()
     .toArray() as IInventoryArmor[])
 
+  // filter all player items
   items = items
     // only armor :)
     .filter(item => item.slot != ArmorSlot.ArmorSlotNone)
@@ -337,7 +212,7 @@ addEventListener('message', async ({data}) => {
     .filter(item => config.disabledItems.indexOf(item.itemInstanceId) == -1)
     // filter the selected exotic right here
     .filter(item => config.selectedExotics.indexOf(FORCE_USE_NO_EXOTIC) == -1 || !item.isExotic)
-    .filter(item => selectedExotics.length != 1 || selectedExotics[0].slot != item.slot || selectedExotics[0].hash == item.hash)
+    .filter(item => !selectedExotic || selectedExotic.slot != item.slot || selectedExotic.hash == item.hash)
     // config.onlyUseMasterworkedItems - only keep masterworked items
     .filter(item => !config.onlyUseMasterworkedItems || item.masterworked)
     // non-legendaries and non-exotics
@@ -362,10 +237,11 @@ addEventListener('message', async ({data}) => {
   // console.log(items.map(d => "id:'"+d.itemInstanceId+"'").join(" or "))
 
 
-  let helmets = items.filter(i => i.slot == ArmorSlot.ArmorSlotHelmet).map(d => new ItemCombination([d]))
-  let gauntlets = items.filter(i => i.slot == ArmorSlot.ArmorSlotGauntlet).map(d => new ItemCombination([d]))
-  let chests = items.filter(i => i.slot == ArmorSlot.ArmorSlotChest).map(d => new ItemCombination([d]))
-  let legs = items.filter(i => i.slot == ArmorSlot.ArmorSlotLegs).map(d => new ItemCombination([d]))
+  // split items into slots
+  let helmets = items.filter(i => i.slot == ArmorSlot.ArmorSlotHelmet)
+  let gauntlets = items.filter(i => i.slot == ArmorSlot.ArmorSlotGauntlet)
+  let chests = items.filter(i => i.slot == ArmorSlot.ArmorSlotChest)
+  let legs = items.filter(i => i.slot == ArmorSlot.ArmorSlotLegs)
   // new Set(items.filter(i => i.slot == ArmorSlot.ArmorSlotClass).map(i => [i.energyAffinity, i.perk]))
 
 
@@ -377,7 +253,7 @@ addEventListener('message', async ({data}) => {
       [gauntlets, gauntlets.length],
       [chests, chests.length],
       [legs, legs.length],
-    ] as [ItemCombination[], number][])
+    ] as [IInventoryArmor[], number][])
       .sort((a, b) => a[1] - b[1])[0][0]
     var keepLength = Math.floor(splitEntry.length / threadSplit.count)
     var startIndex = keepLength * threadSplit.current // we can delete everything before this
@@ -405,95 +281,7 @@ addEventListener('message', async ({data}) => {
       return p;
     }, new Map<ArmorPerkOrSlot, Set<DestinyEnergyType>>())
 
-  if (selectedExotics.length > 1) {
-    let armorSlots = [...new Set(selectedExotics.map(i => i.slot))]
-
-    let items1 = items.filter(i => i.hash == selectedExotics[0].hash)
-    let items2 = items.filter(i => i.hash == selectedExotics[1].hash)
-    // handle same socket
-    if (armorSlots.length == 1) {
-      let permutations = []
-      for (let i1 of items1) {
-        for (let i2 of items2) {
-          permutations.push(new ItemCombination([i1, i2]))
-        }
-      }
-
-      switch (armorSlots[0]) {
-        case ArmorSlot.ArmorSlotHelmet:
-          helmets = permutations;
-          gauntlets = gauntlets.filter(d => !d.containsExotics)
-          chests = chests.filter(d => !d.containsExotics)
-          legs = legs.filter(d => !d.containsExotics)
-          break;
-        case ArmorSlot.ArmorSlotGauntlet:
-          gauntlets = permutations;
-          helmets = helmets.filter(d => !d.containsExotics)
-          chests = chests.filter(d => !d.containsExotics)
-          legs = legs.filter(d => !d.containsExotics)
-          break;
-        case ArmorSlot.ArmorSlotChest:
-          chests = permutations;
-          helmets = helmets.filter(d => !d.containsExotics)
-          gauntlets = gauntlets.filter(d => !d.containsExotics)
-          legs = legs.filter(d => !d.containsExotics)
-          break;
-        case ArmorSlot.ArmorSlotLegs:
-          legs = permutations;
-          helmets = helmets.filter(d => !d.containsExotics)
-          gauntlets = gauntlets.filter(d => !d.containsExotics)
-          chests = chests.filter(d => !d.containsExotics)
-          break;
-      }
-    } else if (armorSlots.length == 2) {
-      /**
-       * TODO!!!!
-       * While the current solution works, it is nowhere near perfect!
-       * Currently I only investigate [all skullforts * all leg helmets] vs [all cuirass * all leg chest pieces] (for example).
-       * But I have to use [all skullforts * all leg. chest pieces] vs [all leg helmets * all cuirass].
-       * As those are not in the same slot this will be pain. PAIN. I tell you, future Mijago, this'll be pain.
-       */
-      let legendary1 = items.filter(i => i.slot == selectedExotics[0].slot && !i.isExotic)
-      let legendary2 = items.filter(i => i.slot == selectedExotics[1].slot && !i.isExotic)
-      let permutations1 = []
-      let permutations2 = []
-      for (let i1 of items1) {
-        for (let i2 of legendary2) {
-          permutations1.push(new ItemCombination([i1, i2]))
-        }
-      }
-      for (let i1 of items2) {
-        for (let i2 of legendary1) {
-          permutations2.push(new ItemCombination([i1, i2]))
-        }
-      }
-
-
-      helmets = helmets.filter(d => !d.containsExotics)
-      gauntlets = gauntlets.filter(d => !d.containsExotics)
-      chests = chests.filter(d => !d.containsExotics)
-      legs = legs.filter(d => !d.containsExotics)
-
-      if (armorSlots[0] === ArmorSlot.ArmorSlotHelmet) {
-        helmets = permutations1;
-      } else if (armorSlots[0] === ArmorSlot.ArmorSlotGauntlet) {
-        gauntlets = permutations1;
-      } else if (armorSlots[0] === ArmorSlot.ArmorSlotChest) {
-        chests = permutations1;
-      } else if (armorSlots[0] === ArmorSlot.ArmorSlotLegs) {
-        legs = permutations1;
-      }
-      if (armorSlots[1] === ArmorSlot.ArmorSlotHelmet) {
-        helmets = permutations2;
-      } else if (armorSlots[1] === ArmorSlot.ArmorSlotGauntlet) {
-        gauntlets = permutations2;
-      } else if (armorSlots[1] === ArmorSlot.ArmorSlotChest) {
-        chests = permutations2;
-      } else if (armorSlots[1] === ArmorSlot.ArmorSlotLegs) {
-        legs = permutations2;
-      }
-    }
-  }
+  // if more than one exotic is selected
   console.debug("items", {
     helmets,
     gauntlets,
@@ -515,7 +303,6 @@ addEventListener('message', async ({data}) => {
   const constantModslotRequirement = prepareConstantModslotRequirement(config);
   const constantAvailableModslots = prepareConstantAvailableModslots(config);
   const constantMustCheckElementRequirement = constantElementRequirement[0] < 5
-  const constHasOneExoticLength = selectedExotics.length <= 1
 
 
   let results: any[] = []
@@ -528,11 +315,11 @@ addEventListener('message', async ({data}) => {
   console.time("tm")
   for (let helmet of helmets) {
     for (let gauntlet of gauntlets) {
-      if (constHasOneExoticLength && helmet.containsExotics && gauntlet.containsExotics) continue;
+      if (helmet.isExotic && gauntlet.isExotic) continue;
       for (let chest of chests) {
-        if (constHasOneExoticLength && (helmet.containsExotics || gauntlet.containsExotics) && chest.containsExotics) continue;
+        if ((helmet.isExotic || gauntlet.isExotic) && chest.isExotic) continue;
         for (let leg of legs) {
-          if (constHasOneExoticLength && (helmet.containsExotics || gauntlet.containsExotics || chest.containsExotics) && leg.containsExotics) continue;
+          if ((helmet.isExotic || gauntlet.isExotic || chest.isExotic) && leg.isExotic) continue;
           /**
            *  At this point we already have:
            *  - Masterworked items, if they must be masterworked (config.onlyUseMasterworkedItems)
@@ -600,42 +387,15 @@ addEventListener('message', async ({data}) => {
   });
 })
 
-function getStatSum(items: ItemCombination[]): [number, number, number, number, number, number] {
-  let count = 0;
-  for (let idx = 0; idx < items.length; idx++) {
-    count += items[idx].items.length > 1 ? 1 : 0
-  }
-
-  if (count <= 1)
-    return [
-      items[0].mobility.min + items[1].mobility.min + items[2].mobility.min + items[3].mobility.min,
-      items[0].resilience.min + items[1].resilience.min + items[2].resilience.min + items[3].resilience.min,
-      items[0].recovery.min + items[1].recovery.min + items[2].recovery.min + items[3].recovery.min,
-      items[0].discipline.min + items[1].discipline.min + items[2].discipline.min + items[3].discipline.min,
-      items[0].intellect.min + items[1].intellect.min + items[2].intellect.min + items[3].intellect.min,
-      items[0].strength.min + items[1].strength.min + items[2].strength.min + items[3].strength.min,
-    ]
-  else {
-    let normal = items.filter(d => d.items.length == 1)
-    let special: [number, number, number, number, number, number] = items.filter(d => d.items.length > 1).reduce((p, v) => {
-      p[0] = v.mobility.sum < p[0] ? v.mobility.sum : p[0];
-      p[1] = v.resilience.sum < p[1] ? v.resilience.sum : p[1];
-      p[2] = v.recovery.sum < p[2] ? v.recovery.sum : p[2];
-      p[3] = v.discipline.sum < p[3] ? v.discipline.sum : p[3];
-      p[4] = v.intellect.sum < p[4] ? v.intellect.sum : p[4];
-      p[5] = v.strength.sum < p[5] ? v.strength.sum : p[5];
-      return p;
-    }, [200, 200, 200, 200, 200, 200])
-    for (let n of normal) {
-      special[0] += n.mobility.min;
-      special[1] += n.resilience.min;
-      special[2] += n.recovery.min;
-      special[3] += n.discipline.min;
-      special[4] += n.intellect.min;
-      special[5] += n.strength.min;
-    }
-    return special;
-  }
+function getStatSum(items: IInventoryArmor[]): [number, number, number, number, number, number] {
+  return [
+    items[0].mobility + items[1].mobility + items[2].mobility + items[3].mobility,
+    items[0].resilience + items[1].resilience + items[2].resilience + items[3].resilience,
+    items[0].recovery + items[1].recovery + items[2].recovery + items[3].recovery,
+    items[0].discipline + items[1].discipline + items[2].discipline + items[3].discipline,
+    items[0].intellect + items[1].intellect + items[2].intellect + items[3].intellect,
+    items[0].strength + items[1].strength + items[2].strength + items[3].strength,
+  ]
 }
 
 class OrderedList<T> {
@@ -687,10 +447,10 @@ class OrderedList<T> {
 function handlePermutation(
   runtime: any,
   config: BuildConfiguration,
-  helmet: ItemCombination,
-  gauntlet: ItemCombination,
-  chest: ItemCombination,
-  leg: ItemCombination,
+  helmet: IInventoryArmor,
+  gauntlet: IInventoryArmor,
+  chest: IInventoryArmor,
+  leg: IInventoryArmor,
   constantBonus: number[],
   availableModCost: number[],
   doNotOutput = false
@@ -701,16 +461,15 @@ function handlePermutation(
 
   for (let i = 0; i < items.length; i++) {
     let item = items[i];  // add masterworked value, if necessary
-    if (item.allMasterworked
-      || (item.containsExotics && !item.containsLegendaries && config.assumeExoticsMasterworked)
-      || (!item.containsExotics && item.containsLegendaries && config.assumeLegendariesMasterworked)
-      || (item.containsExotics && item.containsLegendaries && config.assumeLegendariesMasterworked && config.assumeExoticsMasterworked))
+    if (item.masterworked
+      || (item.isExotic && config.assumeExoticsMasterworked)
+      || (!item.isExotic && config.assumeLegendariesMasterworked))
       totalStatBonus += 2;
   }
 
   const stats = getStatSum(items);
   stats[0] += totalStatBonus;
-  stats[1] += totalStatBonus + (!items[2].containsExotics && config.addConstent1Resilience ? 1 : 0);
+  stats[1] += totalStatBonus + (!items[2].isExotic && config.addConstant1Resilience ? 1 : 0);
   stats[2] += totalStatBonus;
   stats[3] += totalStatBonus;
   stats[4] += totalStatBonus;
@@ -778,7 +537,7 @@ function handlePermutation(
       const mod = usedMods.list[i];
 
       const cost = STAT_MOD_VALUES[mod][2];
-      const availableSlots = availableModCost.where(d => d >= cost);
+      const availableSlots = availableModCost.filter(d => d >= cost);
       if (availableSlots.length == 0) {
         if (mod % 2 == 0) {
           // replace a major mod with two minor mods OR abort
@@ -802,10 +561,10 @@ function handlePermutation(
   // Check if we should add our results at all
   if (config.onlyShowResultsWithNoWastedStats) {
     // Definitely return when we encounter stats above 100
-    if (stats.where(d => d > 100).length > 0)
+    if (stats.filter(d => d > 100).length > 0)
       return null;
     // definitely return when we encounter stats that can not be fixed
-    if (stats.where(d => d % 5 != 0).length > 0)
+    if (stats.filter(d => d % 5 != 0).length > 0)
       return null;
 
     // now find out how many mods we need to fix our stats to 0 waste
@@ -821,12 +580,12 @@ function handlePermutation(
 
     for (let i = availableModCostLen - 1; i >= 0; i--) {
       let result = waste
-        .where(t => availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
-        .where(t => t[0] >= 5 && t[2] < 100)
+        .filter(t => availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
+        .filter(t => t[0] >= 5 && t[2] < 100)
         .sort((a, b) => a[0] - b[0])[0]
       if (!result) break;
 
-      const modCost = availableModCost.where(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
+      const modCost = availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
       availableModCost.splice(availableModCost.indexOf(modCost), 1);
       availableModCostLen--;
       stats[result[1]] += 5
@@ -853,7 +612,7 @@ function handlePermutation(
       possible100.push([n, 100 - maximum])
     }
 
-    // TODO there is a bug here somewhere
+    // TODO there is a bug here somefilter
     if (maximum + maxBonus >= runtime.maximumPossibleTiers[n]) {
       let minor = STAT_MOD_VALUES[(1 + (n * 2)) as StatModifier][2]
       let major = STAT_MOD_VALUES[(2 + (n * 2)) as StatModifier][2]
@@ -928,7 +687,7 @@ function handlePermutation(
       }
       const majorMapping = [0, 0, 0, 1, 2, 2]
       const usedCostIdx = [false, false, false, false, false]
-      //if (combination.where(d => d[0] == 4).length > 0) console.log("01", {usedCostIdx, possible100, combination, availableModCostLen, requiredModCosts, requiredModCostsCount})
+      //if (combination.filter(d => d[0] == 4).length > 0) console.log("01", {usedCostIdx, possible100, combination, availableModCostLen, requiredModCosts, requiredModCostsCount})
 
       if (requiredModCostsCount > availableModCostLen)
         continue;
@@ -940,7 +699,7 @@ function handlePermutation(
           .map((d, i) => [d, i])
           .filter(([d, index]) => (!usedCostIdx[index]) && d >= costIdx)
 
-        //if (combination.where(d => d[0] == 4).length > 0)  console.log("01 >>","log",  costAmount, dat.length, dat, costAmount)
+        //if (combination.filter(d => d[0] == 4).length > 0)  console.log("01 >>","log",  costAmount, dat.length, dat, costAmount)
         let origCostAmount = costAmount
         for (let n = 0; (n < origCostAmount) && (n < dat.length); n++) {
           usedCostIdx[dat[n][1]] = true;
@@ -979,7 +738,7 @@ function handlePermutation(
 
     for (let id = 0; id < availableModCostLen; id++) {
       let result = waste
-        .where(t => availableModCost.where(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
+        .filter(t => availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
         .filter(t => t[0] >= 5 && t[2] < 100)
         .sort((a, b) => a[0] - b[0])[0]
       if (!result) break;
@@ -990,7 +749,7 @@ function handlePermutation(
         continue;
       }
 
-      const modCost = availableModCost.where(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
+      const modCost = availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
       availableModCost.splice(availableModCost.indexOf(modCost), 1);
       availableModCostLen--;
       stats[result[1]] += 5
@@ -1004,13 +763,13 @@ function handlePermutation(
   if (config.onlyShowResultsWithNoWastedStats && waste1 > 0)
     return null;
 
-  const exotic = helmet.containsExotics ? helmet : gauntlet.containsExotics ? gauntlet : chest.containsExotics ? chest : leg.containsExotics ? leg : null
+  const exotic = helmet.isExotic ? helmet : gauntlet.isExotic ? gauntlet : chest.isExotic ? chest : leg.isExotic ? leg : null
   return {
     exotic: exotic == null ? [] : [{
-      icon: exotic?.items[0].icon,
-      watermark: exotic?.items[0].watermarkIcon,
-      name: exotic?.items[0].name,
-      hash: exotic?.items[0].hash
+      icon: exotic?.icon,
+      watermark: exotic?.watermarkIcon,
+      name: exotic?.name,
+      hash: exotic?.hash
     }],
     modCount: usedMods.length,
     modCost: usedMods.list.reduce((p, d: StatModifier) => p + STAT_MOD_VALUES[d][2], 0),
@@ -1019,7 +778,7 @@ function handlePermutation(
     statsNoMods: statsWithoutMods,
     tiers: getSkillTier(stats),
     waste: waste1,
-    items: items.map(i => i.items).flat().reduce((p: any, instance) => {
+    items: items.reduce((p: any, instance) => {
       p[instance.slot - 1].push({
         energy: instance.energyAffinity,
         energyLevel: instance.energyLevel,
