@@ -290,7 +290,6 @@ addEventListener('message', async ({data}) => {
       return p;
     }, new Map<ArmorPerkOrSlot, Set<DestinyEnergyType>>())
 
-  // if more than one exotic is selected
   console.debug("items", {
     helmets,
     gauntlets,
@@ -324,8 +323,11 @@ addEventListener('message', async ({data}) => {
   console.time("tm")
   for (let helmet of helmets) {
     for (let gauntlet of gauntlets) {
+      if (helmet.isExotic && gauntlet.isExotic) continue;
       for (let chest of chests) {
+        if ((helmet.isExotic || gauntlet.isExotic) && chest.isExotic) continue;
         for (let leg of legs) {
+          if ((helmet.isExotic || gauntlet.isExotic || chest.isExotic) && leg.isExotic) continue;
           /**
            *  At this point we already have:
            *  - Masterworked items, if they must be masterworked (config.onlyUseMasterworkedItems)
