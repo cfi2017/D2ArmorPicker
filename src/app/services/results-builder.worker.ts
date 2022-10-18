@@ -237,12 +237,20 @@ addEventListener('message', async ({data}) => {
     });
   // console.log(items.map(d => "id:'"+d.itemInstanceId+"'").join(" or "))
 
-
   // split items into slots
   let helmets = items.filter(i => i.slot == ArmorSlot.ArmorSlotHelmet)
-  let gauntlets = items.filter(i => i.slot == ArmorSlot.ArmorSlotGauntlet)
-  let chests = items.filter(i => i.slot == ArmorSlot.ArmorSlotChest)
-  let legs = items.filter(i => i.slot == ArmorSlot.ArmorSlotLegs)
+    .filter(k => {
+      return !config.useFotlArmor
+        || ([
+          199733460, // titan masq
+          2545426109, // warlock
+          3224066584, // hunter
+        ]).indexOf(k.hash) > -1;
+    })
+    .map(d => new ItemCombination([d]))
+  let gauntlets = items.filter(i => i.slot == ArmorSlot.ArmorSlotGauntlet).map(d => new ItemCombination([d]))
+  let chests = items.filter(i => i.slot == ArmorSlot.ArmorSlotChest).map(d => new ItemCombination([d]))
+  let legs = items.filter(i => i.slot == ArmorSlot.ArmorSlotLegs).map(d => new ItemCombination([d]))
   // new Set(items.filter(i => i.slot == ArmorSlot.ArmorSlotClass).map(i => [i.energyAffinity, i.perk]))
 
 
