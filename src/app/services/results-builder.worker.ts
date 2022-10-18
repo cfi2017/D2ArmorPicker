@@ -162,15 +162,15 @@ function prepareConstantElementRequirement(config: BuildConfiguration) {
 }
 
 function prepareConstantModslotRequirement(config: BuildConfiguration) {
-  let constantElementRequirement = []
-  for (let n = 0; n < ArmorPerkOrSlot.COUNT; n++) constantElementRequirement.push(0)
+  let constantModslotRequirement = []
+  for (let n = 0; n < ArmorPerkOrSlot.COUNT; n++) constantModslotRequirement.push(0)
 
-  constantElementRequirement[config.armorPerks[ArmorSlot.ArmorSlotHelmet].value]++;
-  constantElementRequirement[config.armorPerks[ArmorSlot.ArmorSlotChest].value]++;
-  constantElementRequirement[config.armorPerks[ArmorSlot.ArmorSlotGauntlet].value]++;
-  constantElementRequirement[config.armorPerks[ArmorSlot.ArmorSlotLegs].value]++;
-  constantElementRequirement[config.armorPerks[ArmorSlot.ArmorSlotClass].value]++;
-  return constantElementRequirement;
+  constantModslotRequirement[config.armorPerks[ArmorSlot.ArmorSlotHelmet].value]++;
+  constantModslotRequirement[config.armorPerks[ArmorSlot.ArmorSlotChest].value]++;
+  constantModslotRequirement[config.armorPerks[ArmorSlot.ArmorSlotGauntlet].value]++;
+  constantModslotRequirement[config.armorPerks[ArmorSlot.ArmorSlotLegs].value]++;
+  constantModslotRequirement[config.armorPerks[ArmorSlot.ArmorSlotClass].value]++;
+  return constantModslotRequirement;
 }
 
 function prepareConstantAvailableModslots(config: BuildConfiguration) {
