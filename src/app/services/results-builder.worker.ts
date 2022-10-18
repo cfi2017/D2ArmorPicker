@@ -69,21 +69,22 @@ function checkElements(config: BuildConfiguration, constantElementRequirements: 
 function checkSlots(config: BuildConfiguration, constantModslotRequirement: number[], availableClassItemTypes: Set<ArmorPerkOrSlot>,
                     helmet: IInventoryArmor, gauntlet: IInventoryArmor, chest: IInventoryArmor, leg: IInventoryArmor) {
 
-  var exoticId = config.selectedExotics[0] || 0
+  let exoticId = config.selectedExotics[0] || 0
   let requirements = constantModslotRequirement.slice()
-  if ((exoticId <= 0 || (helmet.hash != exoticId))
+  let no_exotic = exoticId <= 0;
+  if ((no_exotic || (helmet.hash != exoticId))
     && config.armorPerks[ArmorSlot.ArmorSlotHelmet].fixed && config.armorPerks[ArmorSlot.ArmorSlotHelmet].value != ArmorPerkOrSlot.None
     && config.armorPerks[ArmorSlot.ArmorSlotHelmet].value != helmet.perk)
     return {valid: false};
-  if ((exoticId <= 0 || (gauntlet.hash != exoticId))
+  if ((no_exotic || (gauntlet.hash != exoticId))
     && config.armorPerks[ArmorSlot.ArmorSlotGauntlet].fixed && config.armorPerks[ArmorSlot.ArmorSlotGauntlet].value != ArmorPerkOrSlot.None
     && config.armorPerks[ArmorSlot.ArmorSlotGauntlet].value != gauntlet.perk)
     return {valid: false};
-  if ((exoticId <= 0 || (chest.hash != exoticId))
+  if ((no_exotic || (chest.hash != exoticId))
     && config.armorPerks[ArmorSlot.ArmorSlotChest].fixed && config.armorPerks[ArmorSlot.ArmorSlotChest].value != ArmorPerkOrSlot.None
     && config.armorPerks[ArmorSlot.ArmorSlotChest].value != chest.perk)
     return {valid: false};
-  if ((exoticId <= 0 || (leg.hash != exoticId))
+  if ((no_exotic || (leg.hash != exoticId))
     && config.armorPerks[ArmorSlot.ArmorSlotLegs].fixed && config.armorPerks[ArmorSlot.ArmorSlotLegs].value != ArmorPerkOrSlot.None
     && config.armorPerks[ArmorSlot.ArmorSlotLegs].value != leg.perk)
     return {valid: false};
@@ -121,7 +122,7 @@ function checkSlots(config: BuildConfiguration, constantModslotRequirement: numb
       }
     }
     if (fixed) bad--;
-  } else if (requiredClassItemType == ArmorPerkOrSlot.None && config.armorPerks[ArmorSlot.ArmorSlotClass].fixed) {
+  } else if (config.armorPerks[ArmorSlot.ArmorSlotClass].fixed) {
     requiredClassItemType = config.armorPerks[ArmorSlot.ArmorSlotClass].value
   }
 
@@ -315,11 +316,8 @@ addEventListener('message', async ({data}) => {
   console.time("tm")
   for (let helmet of helmets) {
     for (let gauntlet of gauntlets) {
-      if (helmet.isExotic && gauntlet.isExotic) continue;
       for (let chest of chests) {
-        if ((helmet.isExotic || gauntlet.isExotic) && chest.isExotic) continue;
         for (let leg of legs) {
-          if ((helmet.isExotic || gauntlet.isExotic || chest.isExotic) && leg.isExotic) continue;
           /**
            *  At this point we already have:
            *  - Masterworked items, if they must be masterworked (config.onlyUseMasterworkedItems)
