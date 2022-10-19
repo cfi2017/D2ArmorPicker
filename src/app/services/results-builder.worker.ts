@@ -536,7 +536,8 @@ function handlePermutation(
      *  We'll do this until we either reach the usedMods length of 5 (the limit), or until all
      *  modslot limitations are satisfied.
      */
-    for (let i = 0; i < usedMods.length && usedMods.length <= 5; i++) {
+    // todo: is this correct?
+    for (let i = 0; i < usedMods.length && usedMods.length < 5; i++) {
       const mod = usedMods.list[i];
 
       const cost = STAT_MOD_VALUES[mod][2];
