@@ -497,13 +497,18 @@ function handlePermutation(
   ]
 
   const requiredModsTotal = requiredMods[0] + requiredMods[1] + requiredMods[2] + requiredMods[3] + requiredMods[4] + requiredMods[5]
+  // list of stat modifiers (e.g. major resilience mod) sorted by cost
   const usedMods: OrderedList<StatModifier> = new OrderedList<StatModifier>(d => STAT_MOD_VALUES[d][2])
   // only calculate mods if necessary. If we are already above the limit there's no reason to do the rest
   if (requiredModsTotal > 5) return null;
 
+  // count of any mod slots that still have capacity (1+)
   let availableModCostLen = availableModCost.length;
+
+  // if we need more mods than are available then return
   if (requiredModsTotal > availableModCostLen) return null;
 
+  // if we need any more mods check if we can fit them now
   if (requiredModsTotal > 0) {
     // first, add mods that are necessary
     for (let statId = 0; statId < 6; statId++) {
@@ -512,7 +517,7 @@ function handlePermutation(
       // Add a minor mod in favor of a major mod, if the stat number ends at 5, 6, 7, 8, or 9.
       // This saves slots AND reduces wasted stats.
       const statDifference = stats[statId] % 10;
-      if (statDifference > 0 && statDifference % 10 >= 5) {
+      if (statDifference > 0 && statDifference >= 5) {
         usedMods.insert((1 + (statId * 2)) as StatModifier)
 
         requiredMods[statId]--;
