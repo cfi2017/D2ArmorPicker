@@ -450,7 +450,7 @@ function handlePermutation(
   chest: IInventoryArmor,
   leg: IInventoryArmor,
   constantBonus: number[],
-  availableModCost: number[],
+  mod_slots_energy_capacity: number[], // todo: what if we were to sort this
   doNotOutput = false
 ): any {
   const items = [helmet, gauntlet, chest, leg]
@@ -496,20 +496,20 @@ function handlePermutation(
     Math.ceil(Math.max(0, config.minimumStatTiers[5].value - stats[5] / 10)),
   ]
 
-  const requiredModsTotal = requiredMods[0] + requiredMods[1] + requiredMods[2] + requiredMods[3] + requiredMods[4] + requiredMods[5]
+  const required_mod_slots = requiredMods[0] + requiredMods[1] + requiredMods[2] + requiredMods[3] + requiredMods[4] + requiredMods[5]
   // list of stat modifiers (e.g. major resilience mod) sorted by cost
   const usedMods: OrderedList<StatModifier> = new OrderedList<StatModifier>(d => STAT_MOD_VALUES[d][2])
   // only calculate mods if necessary. If we are already above the limit there's no reason to do the rest
-  if (requiredModsTotal > 5) return null;
+  if (required_mod_slots > 5) return null;
 
   // count of any mod slots that still have capacity (1+)
-  let availableModCostLen = availableModCost.length;
+  let available_mod_slots = mod_slots_energy_capacity.length;
 
   // if we need more mods than are available then return
-  if (requiredModsTotal > availableModCostLen) return null;
+  if (required_mod_slots > available_mod_slots) return null;
 
   // if we need any more mods check if we can fit them now
-  if (requiredModsTotal > 0) {
+  if (required_mod_slots > 0) {
     // first, add mods that are necessary
     for (let statId = 0; statId < 6; statId++) {
       if (requiredMods[statId] == 0) continue;
@@ -536,12 +536,12 @@ function handlePermutation(
      *  We'll do this until we either reach the usedMods length of 5 (the limit), or until all
      *  modslot limitations are satisfied.
      */
-    // todo: is this correct?
     for (let i = 0; i < usedMods.length && usedMods.length < 5; i++) {
       const mod = usedMods.list[i];
 
       const cost = STAT_MOD_VALUES[mod][2];
-      const availableSlots = availableModCost.filter(d => d >= cost);
+      // todo: this is likely more performant with a traditional loop and a break statement
+      const availableSlots = mod_slots_energy_capacity.filter(d => d >= cost);
       if (availableSlots.length == 0) {
         if (mod % 2 == 0) {
           // replace a major mod with two minor mods OR abort
@@ -555,8 +555,8 @@ function handlePermutation(
           return null;
         }
       } else {
-        availableModCost.splice(availableModCost.indexOf(availableSlots[0]), 1)
-        availableModCostLen--;
+        mod_slots_energy_capacity.splice(mod_slots_energy_capacity.indexOf(availableSlots[0]), 1)
+        available_mod_slots--;
       }
     }
   }
@@ -571,9 +571,9 @@ function handlePermutation(
     if (stats.filter(d => d % 5 != 0).length > 0)
       return null;
 
-    // now find out how many mods we need to fix our stats to 0 waste
+    // now find out how many mods we need to fix our stats to 0 stats_wasted
     // Yes, this is basically duplicated code. But necessary.
-    let waste = [
+    let stats_wasted = [
       stats[ArmorStat.Mobility],
       stats[ArmorStat.Resilience],
       stats[ArmorStat.Recovery],
@@ -581,33 +581,49 @@ function handlePermutation(
       stats[ArmorStat.Intellect],
       stats[ArmorStat.Strength]
     ].map((v, index) => [v % 10, index, v]).sort((a, b) => b[0] - a[0])
+    // arr of [stats_wasted, statId, total] tuples sorted by stats_wasted descending
 
-    for (let i = availableModCostLen - 1; i >= 0; i--) {
-      let result = waste
-        .filter(t => availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
-        .filter(t => t[0] >= 5 && t[2] < 100)
+    // iterate backwards
+    for (let i = available_mod_slots - 1; i >= 0; i--) {
+      let result = stats_wasted
+        // any waste stats where the waste is 5 or higher and the total stat is under 100 (else our minor mod would result in wasted stats)
+        // any stats that are waste we can solve (5)
+        .filter(t => t[0] === 5)
+        // any waste stats with a minor mod cost low enough that we have a slot to fill them with => there is a slot that has enough capacity for this stats minor cost
+        .filter(t => mod_slots_energy_capacity.filter(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
         .sort((a, b) => a[0] - b[0])[0]
-      if (!result) break;
+      // todo: verify
+      // if we can't find an improvement just break
+      if (!result) break; // ?
 
-      const modCost = availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
-      availableModCost.splice(availableModCost.indexOf(modCost), 1);
-      availableModCostLen--;
+      // since we have a result we can improve
+      // find the first slot we could use to improve this (the capacity array is sorted so the first result will also be the most efficient)
+      // todo: replace this with a for loop
+      const modCost = mod_slots_energy_capacity.filter(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
+
+      // that slot is no longer available, remove it
+      mod_slots_energy_capacity.splice(mod_slots_energy_capacity.indexOf(modCost), 1);
+      // we have one less slot available
+      available_mod_slots--;
+      // we added a minor mod so increase our stat
       stats[result[1]] += 5
+      // remove five from the stats_wasted tuple, so it doesn't get caught in the next iteration
       result[0] -= 5;
+      // we used another mod
       usedMods.insert(1 + 2 * result[1])
     }
-    const waste1 = getWaste(stats);
-    if (waste1 > 0)
-      return null;
-  }
+    const waste1 = getWaste(stats); // get wasted stats total
+    if (waste1 > 0) // we above 0 wasted?
+      return null; // uh-oh
+  } // end making sure we have no wasted stats
   if (usedMods.length > 5)
     return null;
 
 
   // get maximum possible stat and write them into the runtime
   // Get maximal possible stats and write them in the runtime variable
-  const maxBonus = 10 * availableModCostLen
-  const maxBonus1 = 100 - 10 * availableModCostLen
+  const maxBonus = 10 * available_mod_slots
+  const maxBonus1 = 100 - 10 * available_mod_slots
   const possible100 = []
   for (let n = 0; n < 6; n++) {
     let maximum = stats[n]
@@ -616,20 +632,20 @@ function handlePermutation(
       possible100.push([n, 100 - maximum])
     }
 
-    // TODO there is a bug here somefilter
+    // TODO there is a bug here somewhere
     if (maximum + maxBonus >= runtime.maximumPossibleTiers[n]) {
       let minor = STAT_MOD_VALUES[(1 + (n * 2)) as StatModifier][2]
       let major = STAT_MOD_VALUES[(2 + (n * 2)) as StatModifier][2]
-      for (let i = 0; i < availableModCostLen && maximum < 100; i++) {
-        if (availableModCost[i] >= major) maximum += 10;
-        if (availableModCost[i] >= minor && availableModCost[i] < major) maximum += 5;
+      for (let i = 0; i < available_mod_slots && maximum < 100; i++) {
+        if (mod_slots_energy_capacity[i] >= major) maximum += 10;
+        if (mod_slots_energy_capacity[i] >= minor && mod_slots_energy_capacity[i] < major) maximum += 5;
       }
       if (maximum > runtime.maximumPossibleTiers[n])
         runtime.maximumPossibleTiers[n] = maximum
     }
   }
 
-  if (availableModCostLen > 0 && possible100.length >= 3) {
+  if (available_mod_slots > 0 && possible100.length >= 3) {
     // validate if it is possible
     possible100.sort((a, b) => a[1] - b[1])
 
@@ -637,21 +653,21 @@ function handlePermutation(
     const comb3 = []
     for (let i1 = 0; i1 < possible100.length - 2; i1++) {
       let cost1 = ~~((Math.max(0, possible100[i1][1], 0) + 9) / 10);
-      if (cost1 > availableModCostLen) break;
+      if (cost1 > available_mod_slots) break;
 
       for (let i2 = i1 + 1; i2 < possible100.length - 1; i2++) {
         let cost2 = ~~((Math.max(0, possible100[i2][1], 0) + 9) / 10);
-        if (cost1 + cost2 > availableModCostLen) break;
+        if (cost1 + cost2 > available_mod_slots) break;
 
         for (let i3 = i2 + 1; i3 < possible100.length; i3++) {
           let cost3 = ~~((Math.max(0, possible100[i3][1], 0) + 9) / 10);
-          if (cost1 + cost2 + cost3 > availableModCostLen) break;
+          if (cost1 + cost2 + cost3 > available_mod_slots) break;
 
 
           var addedAs4x100 = false
           for (let i4 = i3 + 1; i4 < possible100.length; i4++) {
             let cost4 = ~~((Math.max(0, possible100[i4][1], 0) + 9) / 10);
-            if (cost1 + cost2 + cost3 + cost4 > availableModCostLen) break;
+            if (cost1 + cost2 + cost3 + cost4 > available_mod_slots) break;
             comb3.push([possible100[i1], possible100[i2], possible100[i3], possible100[i4]])
             addedAs4x100 = true;
           }
@@ -691,15 +707,15 @@ function handlePermutation(
       }
       const majorMapping = [0, 0, 0, 1, 2, 2]
       const usedCostIdx = [false, false, false, false, false]
-      //if (combination.filter(d => d[0] == 4).length > 0) console.log("01", {usedCostIdx, possible100, combination, availableModCostLen, requiredModCosts, requiredModCostsCount})
+      //if (combination.filter(d => d[0] == 4).length > 0) console.log("01", {usedCostIdx, possible100, combination, available_mod_slots, requiredModCosts, requiredModCostsCount})
 
-      if (requiredModCostsCount > availableModCostLen)
+      if (requiredModCostsCount > available_mod_slots)
         continue;
 
       for (let costIdx = 5; costIdx >= 3; costIdx--) {
         let costAmount = requiredModCosts[costIdx];
         if (costAmount == 0) continue
-        let dat = availableModCost
+        let dat = mod_slots_energy_capacity
           .map((d, i) => [d, i])
           .filter(([d, index]) => (!usedCostIdx[index]) && d >= costIdx)
 
@@ -714,11 +730,11 @@ function handlePermutation(
           requiredModCosts[majorMapping[costIdx]] += 2;
           requiredModCostsCount++;
         }
-        if (requiredModCostsCount > availableModCostLen)
+        if (requiredModCostsCount > available_mod_slots)
           break;
       }
       // 3x100 possible
-      if (requiredModCostsCount <= availableModCostLen) {
+      if (requiredModCostsCount <= available_mod_slots) {
         runtime.statCombo3x100.add((1 << combination[0][0]) + (1 << combination[1][0]) + (1 << combination[2][0]));
         if (combination.length > 3)
           runtime.statCombo4x100.add((1 << combination[0][0]) + (1 << combination[1][0]) + (1 << combination[2][0]) + (1 << combination[3][0]));
@@ -729,7 +745,7 @@ function handlePermutation(
   if (doNotOutput) return "DONOTSEND";
 
   // Add mods to reduce stat waste
-  if (config.tryLimitWastedStats && availableModCostLen > 0) {
+  if (config.tryLimitWastedStats && available_mod_slots > 0) {
 
     let waste = [
       stats[ArmorStat.Mobility],
@@ -740,9 +756,12 @@ function handlePermutation(
       stats[ArmorStat.Strength]
     ].map((v, i) => [v % 10, i, v]).sort((a, b) => b[0] - a[0])
 
-    for (let id = 0; id < availableModCostLen; id++) {
+    for (let id = 0; id < available_mod_slots; id++) {
+      // likely also optimisable with a for loop
       let result = waste
-        .filter(t => availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
+        // any waste stats with a minor mod cost low enough that we have a slot to fill them with => there is a slot that has enough capacity for this stats minor cost
+        .filter(t => mod_slots_energy_capacity.filter(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
+        //
         .filter(t => t[0] >= 5 && t[2] < 100)
         .sort((a, b) => a[0] - b[0])[0]
       if (!result) break;
@@ -753,9 +772,9 @@ function handlePermutation(
         continue;
       }
 
-      const modCost = availableModCost.filter(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
-      availableModCost.splice(availableModCost.indexOf(modCost), 1);
-      availableModCostLen--;
+      const modCost = mod_slots_energy_capacity.filter(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
+      mod_slots_energy_capacity.splice(mod_slots_energy_capacity.indexOf(modCost), 1);
+      available_mod_slots--;
       stats[result[1]] += 5
       result[0] -= 5;
       usedMods.insert(1 + 2 * result[1])
