@@ -437,6 +437,47 @@ class OrderedList<T> {
   }
 }
 
+function get_required_mod_costs(combination: number[][]): [number[], number] {
+  let requiredModCosts = [ 0, 0, 0, 0, 0, 0 ]
+  let requiredModCostsCount = 0
+
+  // for each stat in this combination
+  // calculate how many mods we need to get them to 100 and what the cost
+  for (let i = 0; i < combination.length; i++) {
+    // if we're at 100 ignore the checks and continue
+    const [ statId, needed ] = combination[i];
+    if (needed <= 0) {
+      continue
+    }
+
+    // minor and major costs for the selected stat
+    let minor = STAT_MOD_VALUES[(1 + (statId * 2)) as StatModifier][2]
+    let major = STAT_MOD_VALUES[(2 + (statId * 2)) as StatModifier][2]
+
+    // truncate the needed stats if it's below 0
+    const valueToOvercome = Math.max(0, needed);
+    // divide by 10, rounding down
+    let amountMajor = ~~(valueToOvercome / 10);
+    // check if we have more than 5 remaining
+    let amountMinor = valueToOvercome % 10;
+    if (amountMinor > 5) {
+      // if yes we need another major mod
+      amountMajor++;
+    } else if (amountMinor > 0) {
+      // else we're fine with another minor mod
+      requiredModCosts[minor]++;
+      requiredModCostsCount++;
+    }
+
+    // add major mods
+    for (let k = 0; k < amountMajor; k++) {
+      requiredModCosts[major]++;
+      requiredModCostsCount++;
+    }
+  }
+  return [requiredModCosts, requiredModCostsCount];
+}
+
 /**
  * Returns null, if the permutation is invalid.
  * This code does not utilize fancy filters and other stuff.
@@ -450,7 +491,7 @@ function handlePermutation(
   chest: IInventoryArmor,
   leg: IInventoryArmor,
   constantBonus: number[],
-  mod_slots_energy_capacity: number[], // todo: what if we were to sort this
+  mod_slots_energy_capacity: number[], // this is sorted
   doNotOutput = false
 ): any {
   const items = [helmet, gauntlet, chest, leg]
@@ -678,61 +719,48 @@ function handlePermutation(
     }
 
 
+    // for each potential x3 or x4
     for (let combination of comb3) {
-      var requiredModCosts = [0, 0, 0, 0, 0, 0]
-      let requiredModCostsCount = 0
-
-      for (let i = 0; i < combination.length; i++) {
-        if (combination[i][1] <= 0)
-          continue
-        const data = combination[i]
-        const id = data[0]
-        let minor = STAT_MOD_VALUES[(1 + (id * 2)) as StatModifier][2]
-        let major = STAT_MOD_VALUES[(2 + (id * 2)) as StatModifier][2]
-
-        const valueToOvercome = Math.max(0, data[1]);
-        let amountMajor = ~~(valueToOvercome / 10);
-        let amountMinor = valueToOvercome % 10;
-        if (amountMinor > 5) {
-          amountMajor++;
-        } else if (amountMinor > 0) {
-          requiredModCosts[minor]++;
-          requiredModCostsCount++;
-        }
-
-        for (let k = 0; k < amountMajor; k++) {
-          requiredModCosts[major]++;
-          requiredModCostsCount++;
-        }
-      }
-      const majorMapping = [0, 0, 0, 1, 2, 2]
-      const usedCostIdx = [false, false, false, false, false]
+      // this denotes costs for mods that we need to fulfil a x3 or x4
+      let [requiredModCosts, requiredModCostsCount] = get_required_mod_costs(combination);
+      let used_modslots_indexes = 0;
       //if (combination.filter(d => d[0] == 4).length > 0) console.log("01", {usedCostIdx, possible100, combination, available_mod_slots, requiredModCosts, requiredModCostsCount})
 
+      // if we need more mod slots than we have available this combination isn't possible
       if (requiredModCostsCount > available_mod_slots)
         continue;
 
+      // iterate through costs backwards, stopping at 3? 2 and 1 are minor mods ig? // todo: verify
       for (let costIdx = 5; costIdx >= 3; costIdx--) {
         let costAmount = requiredModCosts[costIdx];
-        if (costAmount == 0) continue
-        let dat = mod_slots_energy_capacity
-          .map((d, i) => [d, i])
-          .filter(([d, index]) => (!usedCostIdx[index]) && d >= costIdx)
+        if (costAmount == 0) continue // continue if we don't need any mods here
 
-        //if (combination.filter(d => d[0] == 4).length > 0)  console.log("01 >>","log",  costAmount, dat.length, dat, costAmount)
+        // get a list of any slots that both have the capacity we need and have not been used to theoretically cover a slot
+        let available_modslots = mod_slots_energy_capacity
+          .map((d, i) => [d, i]) // map to capacity and index
+          .filter(([d, index]) => (!(used_modslots_indexes & (1 << index)) && d >= costIdx))
+          // .filter(([d, index]) => (!usedCostIdx[index]) && d >= costIdx) // any slots that have not been used in a previous iteration of the for loop and that have sufficient cost to cover us
+
+        //if (combination.filter(d => d[0] == 4).length > 0)  console.log("01 >>","log",  costAmount, available_modslots.length, available_modslots, costAmount)
         let origCostAmount = costAmount
-        for (let n = 0; (n < origCostAmount) && (n < dat.length); n++) {
-          usedCostIdx[dat[n][1]] = true;
-          costAmount--;
+        // for either 0..costAmount or 0..available_modslots.length set
+        for (let n = 0; (n < origCostAmount) && (n < available_modslots.length); n++) {
+          let index = available_modslots[n][1];
+          used_modslots_indexes = used_modslots_indexes | (1 << index);
+          costAmount--; // reduce cost amount by one
         }
+        // maybe we can fill stuff with minor mods?
         for (let n = 0; n < costAmount; n++) {
           requiredModCosts[costIdx]--;
-          requiredModCosts[majorMapping[costIdx]] += 2;
+          requiredModCosts[Math.floor(costIdx / 2)] += 2;
           requiredModCostsCount++;
         }
+        // if we have mod mods than are available quit while we're ahead
         if (requiredModCostsCount > available_mod_slots)
           break;
       }
+
+      // if we have
       // 3x100 possible
       if (requiredModCostsCount <= available_mod_slots) {
         runtime.statCombo3x100.add((1 << combination[0][0]) + (1 << combination[1][0]) + (1 << combination[2][0]));
