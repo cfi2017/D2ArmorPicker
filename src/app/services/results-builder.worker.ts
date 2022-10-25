@@ -443,9 +443,8 @@ function get_required_mod_costs(combination: number[][]): [number[], number] {
 
   // for each stat in this combination
   // calculate how many mods we need to get them to 100 and what the cost
-  for (let i = 0; i < combination.length; i++) {
+  for (let [ statId, needed ] of combination) {
     // if we're at 100 ignore the checks and continue
-    const [ statId, needed ] = combination[i];
     if (needed <= 0) {
       continue
     }
@@ -470,10 +469,8 @@ function get_required_mod_costs(combination: number[][]): [number[], number] {
     }
 
     // add major mods
-    for (let k = 0; k < amountMajor; k++) {
-      requiredModCosts[major]++;
-      requiredModCostsCount++;
-    }
+    requiredModCosts[major] += amountMajor;
+    requiredModCostsCount += amountMajor;
   }
   return [requiredModCosts, requiredModCostsCount];
 }
@@ -750,11 +747,9 @@ function handlePermutation(
           costAmount--; // reduce cost amount by one
         }
         // maybe we can fill stuff with minor mods?
-        for (let n = 0; n < costAmount; n++) {
-          requiredModCosts[costIdx]--;
-          requiredModCosts[Math.floor(costIdx / 2)] += 2;
-          requiredModCostsCount++;
-        }
+        requiredModCosts[costIdx] -= costAmount;
+        requiredModCosts[Math.floor(costIdx / 2)] += 2 * costAmount;
+        requiredModCostsCount += costAmount;
         // if we have mod mods than are available quit while we're ahead
         if (requiredModCostsCount > available_mod_slots)
           break;
