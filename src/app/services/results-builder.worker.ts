@@ -778,29 +778,30 @@ function handlePermutation(
       stats[ArmorStat.Intellect],
       stats[ArmorStat.Strength]
     ].map((v, i) => [v % 10, i, v]).sort((a, b) => b[0] - a[0])
-
+    // waste is an array of tuples: [waste, stat_id, value]
     for (let id = 0; id < available_mod_slots; id++) {
       // likely also optimisable with a for loop
       let result = waste
         // any waste stats with a minor mod cost low enough that we have a slot to fill them with => there is a slot that has enough capacity for this stats minor cost
         .filter(t => mod_slots_energy_capacity.filter(d => d >= STAT_MOD_VALUES[(1 + (t[1] * 2)) as StatModifier][2]).length > 0)
         //
-        .filter(t => t[0] >= 5 && t[2] < 100)
+        .filter(([waste, _, value]) => waste >= 5 && value < 100)
         .sort((a, b) => a[0] - b[0])[0]
       if (!result) break;
 
       // Ignore this if it would bring us over the fixed stat tier
-      if (config.minimumStatTiers[result[1] as ArmorStat].fixed && (stats[result[1]] + 5) / 10 >= config.minimumStatTiers[result[1] as ArmorStat].value + 1) {
+      let stat_id = result[1];
+      if (config.minimumStatTiers[stat_id as ArmorStat].fixed && (stats[stat_id] + 5) / 10 >= config.minimumStatTiers[stat_id as ArmorStat].value + 1) {
         result[0] -= 5;
         continue;
       }
 
-      const modCost = mod_slots_energy_capacity.filter(d => d >= STAT_MOD_VALUES[(1 + (result[1] * 2)) as StatModifier][2])[0]
+      const modCost = mod_slots_energy_capacity.filter(d => d >= STAT_MOD_VALUES[(1 + (stat_id * 2)) as StatModifier][2])[0]
       mod_slots_energy_capacity.splice(mod_slots_energy_capacity.indexOf(modCost), 1);
       available_mod_slots--;
-      stats[result[1]] += 5
+      stats[stat_id] += 5
       result[0] -= 5;
-      usedMods.insert(1 + 2 * result[1])
+      usedMods.insert(1 + 2 * stat_id)
     }
   }
 
