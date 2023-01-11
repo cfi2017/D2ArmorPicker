@@ -247,10 +247,9 @@ addEventListener('message', async ({data}) => {
           3224066584, // hunter
         ]).indexOf(k.hash) > -1;
     })
-    .map(d => new ItemCombination([d]))
-  let gauntlets = items.filter(i => i.slot == ArmorSlot.ArmorSlotGauntlet).map(d => new ItemCombination([d]))
-  let chests = items.filter(i => i.slot == ArmorSlot.ArmorSlotChest).map(d => new ItemCombination([d]))
-  let legs = items.filter(i => i.slot == ArmorSlot.ArmorSlotLegs).map(d => new ItemCombination([d]))
+  let gauntlets = items.filter(i => i.slot == ArmorSlot.ArmorSlotGauntlet)
+  let chests = items.filter(i => i.slot == ArmorSlot.ArmorSlotChest)
+  let legs = items.filter(i => i.slot == ArmorSlot.ArmorSlotLegs)
   // new Set(items.filter(i => i.slot == ArmorSlot.ArmorSlotClass).map(i => [i.energyAffinity, i.perk]))
 
 
