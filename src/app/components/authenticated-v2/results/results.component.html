@@ -138,7 +138,7 @@
               matTooltip="The mobility of this armor combination.">Mobility
           </th>
           <td *matCellDef="let element " class="statColumn" mat-cell>{{element.stats[ArmorStat.Mobility]}}
-            <img alt="Mobility"
+            <img crossorigin="anonymous" alt="Mobility"
                  class="statIcon"
                  src="https://www.bungie.net/common/destiny2_content/icons/e26e0e93a9daf4fdd21bf64eb9246340.png">
           </td>
@@ -150,7 +150,7 @@
               matTooltip="The resilience of this armor combination."> Resilience
           </th>
           <td *matCellDef="let element " class="statColumn" mat-cell>{{element.stats[ArmorStat.Resilience]}}
-            <img alt="Resilience"
+            <img crossorigin="anonymous" alt="Resilience"
                  class="statIcon"
                  src="https://www.bungie.net/common/destiny2_content/icons/202ecc1c6febeb6b97dafc856e863140.png">
           </td>
@@ -162,7 +162,7 @@
               matTooltip="The recovery of this armor combination."> Recovery
           </th>
           <td *matCellDef="let element " class="statColumn" mat-cell>{{element.stats[ArmorStat.Recovery]}}
-            <img alt="Recovery"
+            <img crossorigin="anonymous" alt="Recovery"
                  class="statIcon"
                  src="https://www.bungie.net/common/destiny2_content/icons/128eee4ee7fc127851ab32eac6ca91cf.png">
           </td>
@@ -174,7 +174,7 @@
               matTooltip="The discipline of this armor combination."> Discipline
           </th>
           <td *matCellDef="let element " class="statColumn" mat-cell>{{element.stats[ArmorStat.Discipline]}}
-            <img alt="Discipline"
+            <img crossorigin="anonymous" alt="Discipline"
                  class="statIcon"
                  src="https://www.bungie.net/common/destiny2_content/icons/ca62128071dc254fe75891211b98b237.png">
           </td>
@@ -186,7 +186,7 @@
               matTooltip="The intellect of this armor combination."> Intellect
           </th>
           <td *matCellDef="let element " class="statColumn" mat-cell>{{element.stats[ArmorStat.Intellect]}}
-            <img alt="Intellect"
+            <img crossorigin="anonymous" alt="Intellect"
                  class="statIcon"
                  src="https://www.bungie.net/common/destiny2_content/icons/59732534ce7060dba681d1ba84c055a6.png">
           </td>
@@ -198,7 +198,7 @@
               matTooltip="The strength of this armor combination.">Strength
           </th>
           <td *matCellDef="let element " class="statColumn" mat-cell>{{element.stats[ArmorStat.Strength]}}
-            <img alt="Strength"
+            <img crossorigin="anonymous" alt="Strength"
                  class="statIcon"
                  src="https://www.bungie.net/common/destiny2_content/icons/c7eefc8abbaa586eeab79e962a79d6ad.png">
           </td>
@@ -229,7 +229,7 @@
               [amount]="(element.mods | count:StatModifier.MINOR_RESILIENCE)"
               [isMinorMod]="true" class="modPreview"
               tooltipText="Resilience"
-              url="https://bungie.net/common/destiny2_content/icons/53c28186a4b97285a01aace5748e4de7.png"></app-table-mod-display>
+              url="https://www.bungie.net/common/destiny2_content/icons/53c28186a4b97285a01aace5748e4de7.png"></app-table-mod-display>
             <app-table-mod-display
               [amount]="(element.mods | count:StatModifier.MAJOR_RESILIENCE)"
               class="modPreview"
@@ -241,7 +241,7 @@
               [amount]="(element.mods | count:StatModifier.MINOR_RECOVERY)"
               [isMinorMod]="true" class="modPreview"
               tooltipText="Recovery"
-              url="https://bungie.net/common/destiny2_content/icons/f39b0c97678148a864d6f6fbbe85524d.png"></app-table-mod-display>
+              url="https://www.bungie.net/common/destiny2_content/icons/f39b0c97678148a864d6f6fbbe85524d.png"></app-table-mod-display>
             <app-table-mod-display
               [amount]="(element.mods | count:StatModifier.MAJOR_RECOVERY)"
               class="modPreview"
@@ -253,7 +253,7 @@
               [amount]="(element.mods | count:StatModifier.MINOR_DISCIPLINE)"
               [isMinorMod]="true" class="modPreview"
               tooltipText="Discipline"
-              url="https://bungie.net/common/destiny2_content/icons/8fa2d4e4c82586668210e12c5115575a.png"></app-table-mod-display>
+              url="https://www.bungie.net/common/destiny2_content/icons/8fa2d4e4c82586668210e12c5115575a.png"></app-table-mod-display>
             <app-table-mod-display
               [amount]="(element.mods | count:StatModifier.MAJOR_DISCIPLINE)"
               class="modPreview"
@@ -265,7 +265,7 @@
               [amount]="(element.mods | count:StatModifier.MINOR_INTELLECT)"
               [isMinorMod]="true" class="modPreview"
               tooltipText="Intellect"
-              url="https://bungie.net/common/destiny2_content/icons/d8da60458e3355ddf7123be5ffe3dc3c.png"></app-table-mod-display>
+              url="https://www.bungie.net/common/destiny2_content/icons/d8da60458e3355ddf7123be5ffe3dc3c.png"></app-table-mod-display>
             <app-table-mod-display
               [amount]="(element.mods | count:StatModifier.MAJOR_INTELLECT)"
               class="modPreview"
@@ -277,7 +277,7 @@
               [amount]="(element.mods | count:StatModifier.MINOR_STRENGTH)"
               [isMinorMod]="true" class="modPreview"
               tooltipText="Strength"
-              url="https://bungie.net/common/destiny2_content/icons/ec0b298ec4dac0023604e467a58c3868.png"></app-table-mod-display>
+              url="https://www.bungie.net/common/destiny2_content/icons/ec0b298ec4dac0023604e467a58c3868.png"></app-table-mod-display>
             <app-table-mod-display
               [amount]="(element.mods | count:StatModifier.MAJOR_STRENGTH)"
               class="modPreview"
@@ -293,12 +293,12 @@
           <td *matCellDef="let element " mat-cell>
             <ng-container *ngFor="let exo of element.exotic">
               <!-- TODO name , icon-->
-              <img #tooltip="matTooltip"
+              <img crossorigin="anonymous" #tooltip="matTooltip"
                    class="itemIcon" matTooltip="{{exo.name}}"
-                   src="https://bungie.net/{{exo.icon}}">
-              <img class="itemIconWatermark" src="https://bungie.net/{{exo.watermark}}">
+                   src="https://www.bungie.net/{{exo.icon}}">
+              <img crossorigin="anonymous" class="itemIconWatermark" src="https://www.bungie.net/{{exo.watermark}}">
             </ng-container>
-            <img *ngIf="element.exotic.length == 0" class="itemIcon"
+            <img crossorigin="anonymous" *ngIf="element.exotic.length == 0" class="itemIcon"
                  src="https://www.bungie.net/common/destiny2_content/icons/b4d05ef69d0c3227a7d4f7f35bbc2848.png">
           </td>
         </ng-container>

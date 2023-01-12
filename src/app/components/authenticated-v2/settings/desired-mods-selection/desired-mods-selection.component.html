@@ -101,7 +101,7 @@ These mods add a +5
     </th>
     <td *matCellDef="let element" mat-cell>
         <!-- Item affinity -->
-            <img #tooltip="matTooltip" [src]="getAffinityUrl(element.requiredArmorAffinity)"
+            <img crossorigin="anonymous" #tooltip="matTooltip" [src]="getAffinityUrl(element.requiredArmorAffinity)"
                  class="element-icon"
                  matTooltip='{{getAffinityName(element.requiredArmorAffinity)}} affinity'>
     </td>

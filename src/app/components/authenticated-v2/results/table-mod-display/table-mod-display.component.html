@@ -1,4 +1,4 @@
 <div class="container" *ngIf="amount > 0" [matTooltip]="tooltipText" #tooltip="matTooltip">
-  <img class="modIcon" [class.minor]="isMinorMod" [src]="url">
+  <img crossorigin="anonymous" class="modIcon" [class.minor]="isMinorMod" [src]="url">
   <span class="modText" [class.minor]="isMinorMod">×{{amount}}</span>
 </div>

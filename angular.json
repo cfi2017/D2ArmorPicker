@@ -84,6 +84,12 @@
               "browserTarget": "D2ArmorPicker:build:development"
             }
           },
+          "options": {
+            "headers": {
+              "Cross-Origin-Embedder-Policy": "require-corp",
+              "Cross-Origin-Opener-Policy": "same-origin"
+            }
+          },
           "defaultConfiguration": "development"
         },
         "extract-i18n": {

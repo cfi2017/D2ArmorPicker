@@ -1,18 +1,19 @@
-import {Injectable, OnDestroy} from '@angular/core';
-import {CharacterClass} from "../data/enum/character-Class";
-import {DatabaseService} from "./database.service";
-import {IManifestArmor} from "../data/types/IManifestArmor";
-import {ConfigurationService} from "./configuration.service";
-import {debounceTime} from "rxjs/operators";
-import {BehaviorSubject, Observable, ReplaySubject, Subject} from "rxjs";
-import {BuildConfiguration} from "../data/buildConfiguration";
-import {ArmorStat} from "../data/enum/armor-stat";
-import {StatusProviderService} from "./status-provider.service";
-import {BungieApiService} from "./bungie-api.service";
-import {AuthService} from "./auth.service";
-import {ArmorSlot} from "../data/enum/armor-slot";
-import {NavigationEnd, Router} from "@angular/router";
-import {ResultDefinition} from "../components/authenticated-v2/results/results.component";
+import { Injectable } from '@angular/core';
+import { CharacterClass } from "../data/enum/character-Class";
+import { DatabaseService } from "./database.service";
+import { IManifestArmor } from "../data/types/IManifestArmor";
+import { ConfigurationService } from "./configuration.service";
+import { debounceTime } from "rxjs/operators";
+import { BehaviorSubject, Observable, ReplaySubject } from "rxjs";
+import { BuildConfiguration } from "../data/buildConfiguration";
+import { ArmorStat } from "../data/enum/armor-stat";
+import { StatusProviderService } from "./status-provider.service";
+import { BungieApiService } from "./bungie-api.service";
+import { AuthService } from "./auth.service";
+import { ArmorSlot } from "../data/enum/armor-slot";
+import { NavigationEnd, Router } from "@angular/router";
+import { ResultDefinition } from "../components/authenticated-v2/results/results.component";
+import { wrap } from 'comlink';
 
 type info = {
   results: ResultDefinition[],
@@ -50,9 +51,21 @@ export class InventoryService {
 
   private _config: BuildConfiguration = BuildConfiguration.buildEmptyConfiguration();
   private updatingResults: boolean = false;
+  private handlers: any;
+  private workerImpl: any;
 
   constructor(private db: DatabaseService, private config: ConfigurationService, private status: StatusProviderService,
               private api: BungieApiService, private auth: AuthService, private router: Router) {
+    this.initWorkers().then(async handlers => {
+      console.log('wasm loaded');
+      this.handlers = handlers;
+      console.log(handlers);
+      this.workerImpl = handlers['singleThread'];
+      if (await handlers.supportsThreads) {
+        console.log('threads are supported');
+        this.workerImpl = handlers['multiThread'];
+      }
+    })
     this._inventory = new ReplaySubject(1)
     this.inventory = this._inventory.asObservable();
     this._manifest = new ReplaySubject(1)
@@ -110,6 +123,14 @@ export class InventoryService {
       })
   }
 
+  private async initWorkers(): Promise<any> {
+    return wrap<any>(
+      new Worker(new URL('./wasm-loader.worker', import.meta.url), {
+        type: 'module'
+      })
+    ).handlers;
+  }
+
   private clearResults() {
     this.allArmorResults = []
     this._armorResults.next({
@@ -151,10 +172,14 @@ export class InventoryService {
     }
   }
 
-
   updateResults(nthreads: number = 3) {
     this.clearResults();
+    console.log("Called updateResults")
 
+    if (!this.workerImpl) {
+      console.warn("Called updateResults, but aborting, as there are no handlers.")
+      return;
+    }
     if (this.updatingResults) {
       console.warn("Called updateResults, but aborting, as it is already running.")
       return;
@@ -163,7 +188,21 @@ export class InventoryService {
       console.time("updateResults with WebWorker")
       this.updatingResults = true;
       this.status.modifyStatus(s => s.calculatingResults = true)
-      let doneWorkerCount = 0;
+      // let doneWorkerCount = 0;
+
+      this.handlers['multiThread'](this._config).then((results: any) => {
+        console.log(results);
+        // todo: handle results
+        // we don't have a working results-builder at the moment
+        this.status.modifyStatus(s => s.calculatingResults = false)
+        this.updatingResults = false;
+        return;
+      }).catch(console.error)
+
+      this.status.modifyStatus(s => s.calculatingResults = false)
+      this.updatingResults = false;
+      return;
+/*
 
       let results: any[] = []
       let totalPermutationCount = 0;
@@ -235,6 +274,7 @@ export class InventoryService {
           }
         });
       }
+*/
 
 
     } finally {

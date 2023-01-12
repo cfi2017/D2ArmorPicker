@@ -62,7 +62,7 @@
           </div>
         </td>
         <td class="icon-column">
-          <img #tooltip="matTooltip"
+          <img crossorigin="anonymous" #tooltip="matTooltip"
                *ngIf="i.energy != 0" [src]="getAffinityUrl(i.energy)"
                class="element-icon"
                matTooltip='{{getAffinityName(i.energy)}} affinity'>
@@ -126,7 +126,7 @@
       <td></td>
       <td *ngVar="element?.classItem?.affinity as affinity">
         <!-- Item affinity -->
-        <img #tooltip="matTooltip"
+        <img crossorigin="anonymous" #tooltip="matTooltip"
              *ngIf="affinity != 0" [src]="getAffinityUrl(affinity)"
              class="element-icon"
              matTooltip='{{getAffinityName(affinity)}} affinity'>
@@ -149,7 +149,7 @@
       <td></td>
       <td *ngVar="element?.classItem?.affinity as affinity">
         <!-- Item affinity -->
-        <img #tooltip="matTooltip"
+        <img crossorigin="anonymous" #tooltip="matTooltip"
              *ngIf="affinity != 0" [src]="getAffinityUrl(affinity)"
              class="element-icon"
              matTooltip='{{getAffinityName(affinity)}} affinity'>
@@ -167,37 +167,37 @@
       <td>Total (armor)</td>
       <td *ngIf="!!stats">
         {{stats[ArmorStat.Mobility]}}
-        <img alt="Mobility"
+        <img crossorigin="anonymous" alt="Mobility"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/e26e0e93a9daf4fdd21bf64eb9246340.png">
       </td>
       <td *ngIf="!!stats">
         {{stats[ArmorStat.Resilience]}}
-        <img alt="Resilience"
+        <img crossorigin="anonymous" alt="Resilience"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/202ecc1c6febeb6b97dafc856e863140.png">
       </td>
       <td *ngIf="!!stats">
         {{stats[ArmorStat.Recovery]}}
-        <img alt="Recovery"
+        <img crossorigin="anonymous" alt="Recovery"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/128eee4ee7fc127851ab32eac6ca91cf.png">
       </td>
       <td *ngIf="!!stats">
         {{stats[ArmorStat.Discipline]}}
-        <img alt="Discipline"
+        <img crossorigin="anonymous" alt="Discipline"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/ca62128071dc254fe75891211b98b237.png">
       </td>
       <td *ngIf="!!stats">
         {{stats[ArmorStat.Intellect]}}
-        <img alt="Intellect"
+        <img crossorigin="anonymous" alt="Intellect"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/59732534ce7060dba681d1ba84c055a6.png">
       </td>
       <td *ngIf="!!stats">
         {{stats[ArmorStat.Strength]}}
-        <img alt="Strength"
+        <img crossorigin="anonymous" alt="Strength"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/c7eefc8abbaa586eeab79e962a79d6ad.png">
       </td>
@@ -280,37 +280,37 @@
       <td>Total</td>
       <td>
         {{stats[ArmorStat.Mobility]}}
-        <img alt="Mobility"
+        <img crossorigin="anonymous" alt="Mobility"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/e26e0e93a9daf4fdd21bf64eb9246340.png">
       </td>
       <td>
         {{stats[ArmorStat.Resilience]}}
-        <img alt="Resilience"
+        <img crossorigin="anonymous" alt="Resilience"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/202ecc1c6febeb6b97dafc856e863140.png">
       </td>
       <td>
         {{stats[ArmorStat.Recovery]}}
-        <img alt="Recovery"
+        <img crossorigin="anonymous" alt="Recovery"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/128eee4ee7fc127851ab32eac6ca91cf.png">
       </td>
       <td>
         {{stats[ArmorStat.Discipline]}}
-        <img alt="Discipline"
+        <img crossorigin="anonymous" alt="Discipline"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/ca62128071dc254fe75891211b98b237.png">
       </td>
       <td>
         {{stats[ArmorStat.Intellect]}}
-        <img alt="Intellect"
+        <img crossorigin="anonymous" alt="Intellect"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/59732534ce7060dba681d1ba84c055a6.png">
       </td>
       <td>
         {{stats[ArmorStat.Strength]}}
-        <img alt="Strength"
+        <img crossorigin="anonymous" alt="Strength"
              class="statIcon"
              src="https://www.bungie.net/common/destiny2_content/icons/c7eefc8abbaa586eeab79e962a79d6ad.png">
       </td>
@@ -321,32 +321,32 @@
   <div *ngIf="cost['total'] > 0" style="margin-top: 10px;">
     Total material cost:
     <span *ngIf="cost['glimmer'] > 0" class="currency-icon-container" matTooltip="Glimmer">
-      <img alt="Glimmer" class="currency-icon"
-           src="https://bungie.net/common/destiny2_content/icons/36dd52a3005cb28f7f68448f1ab76c1e.png">
+      <img crossorigin="anonymous" alt="Glimmer" class="currency-icon"
+           src="https://www.bungie.net/common/destiny2_content/icons/36dd52a3005cb28f7f68448f1ab76c1e.png">
       {{cost["glimmer"] | number}}
     </span>
 
     <span *ngIf="cost['shards'] > 0" class="currency-icon-container" matTooltip="Legendary Shards">
-      <img alt="Legendary Shards" class="currency-icon"
-           src="https://bungie.net/common/destiny2_content/icons/1ff4a008cb851794ccb588e4eb3918a1.png">
+      <img crossorigin="anonymous" alt="Legendary Shards" class="currency-icon"
+           src="https://www.bungie.net/common/destiny2_content/icons/1ff4a008cb851794ccb588e4eb3918a1.png">
       {{cost["shards"]}}
     </span>
 
     <span *ngIf="cost['core'] > 0" class="currency-icon-container" matTooltip="Enhancement Cores">
-      <img alt="Enhancement Cores" class="currency-icon"
-           src="https://bungie.net/common/destiny2_content/icons/259c571eb7f9f85e56be657f371e303f.jpg">
+      <img crossorigin="anonymous" alt="Enhancement Cores" class="currency-icon"
+           src="https://www.bungie.net/common/destiny2_content/icons/259c571eb7f9f85e56be657f371e303f.jpg">
       {{cost["core"]}}
     </span>
 
     <span *ngIf="cost['prism'] > 0" class="currency-icon-container" matTooltip="Enhancement Prism">
-      <img alt="Enhancement Prism" class="currency-icon"
-           src="https://bungie.net/common/destiny2_content/icons/0397d34d04b687484f73665bb714227b.jpg">
+      <img crossorigin="anonymous" alt="Enhancement Prism" class="currency-icon"
+           src="https://www.bungie.net/common/destiny2_content/icons/0397d34d04b687484f73665bb714227b.jpg">
       {{cost["prism"]}}
     </span>
 
     <span *ngIf="cost['ascshard'] > 0" class="currency-icon-container" matTooltip="Ascendant Shard">
-  <img alt="Ascendant Shard" class="currency-icon"
-       src="https://bungie.net/common/destiny2_content/icons/2bd6547fa8f170d8868c8ab24b9fe84a.jpg">
+  <img crossorigin="anonymous" alt="Ascendant Shard" class="currency-icon"
+       src="https://www.bungie.net/common/destiny2_content/icons/2bd6547fa8f170d8868c8ab24b9fe84a.jpg">
       {{cost["ascshard"]}}
   </span>
   </div>
@@ -408,7 +408,7 @@
                 <span *ngIf="$any(config_armorAffinities)[idx+1].value == 3">Void </span>
                 <span *ngIf="$any(config_armorAffinities)[idx+1].value == 6">Stasis </span>
                 <!-- Item affinity -->
-                <img #tooltip="matTooltip"
+                <img crossorigin="anonymous" #tooltip="matTooltip"
                      *ngIf="$any(config_armorAffinities)[idx+1].value != 0"
                      [src]="getAffinityUrl($any(config_armorAffinities)[idx+1].value)"
                      class="element-icon-mini"
@@ -521,7 +521,7 @@
                 <span *ngIf="info.requiredArmorAffinity == 3"> Void </span>
                 <span *ngIf="info.requiredArmorAffinity == 6"> Stasis </span>
                     <!-- Item affinity -->
-                <img #tooltip="matTooltip"
+                <img crossorigin="anonymous" #tooltip="matTooltip"
                      *ngIf="info.requiredArmorAffinity != 0" [src]="getAffinityUrl(info.requiredArmorAffinity)"
                      class="element-icon-mini"
                      matTooltip='{{getAffinityName(info.requiredArmorAffinity)}} affinity'>
@@ -569,7 +569,7 @@
       <tr *ngFor="let statId of armorStatIds">
         <td>{{ArmorStatNames[statId]}}</td>
         <td>
-          <img alt="{{ArmorStatNames[statId]}}" src="{{ArmorStatIconUrls[statId]}}" style="height: 18px">
+          <img crossorigin="anonymous" alt="{{ArmorStatNames[statId]}}" src="{{ArmorStatIconUrls[statId]}}" style="height: 18px">
         </td>
         <td *ngFor="let d of getColumnForStat(statId)">
           <div *ngIf="!!d" [class]="d" class="energy-bar"></div>
@@ -596,8 +596,8 @@
           <td colspan="10">{{exotic[0].name}}</td>
           <td colspan="1">
             <div class="item-icon-container">
-              <img class="item-icon" src="https://bungie.net/{{exotic[0].icon}}">
-              <img class="item-icon-overlay" src="https://bungie.net/{{exotic[0].watermark}}">
+              <img crossorigin="anonymous" class="item-icon" src="https://www.bungie.net/{{exotic[0].icon}}">
+              <img crossorigin="anonymous" class="item-icon-overlay" src="https://www.bungie.net/{{exotic[0].watermark}}">
             </div>
           </td>
         </tr>
