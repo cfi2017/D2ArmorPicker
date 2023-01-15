@@ -189,8 +189,12 @@ export class InventoryService {
       this.updatingResults = true;
       this.status.modifyStatus(s => s.calculatingResults = true)
       // let doneWorkerCount = 0;
+      console.log(this._config);
 
-      this.handlers['multiThread'](this._config).then((results: any) => {
+      this.workerImpl({
+        ...this._config,
+        selectedExotic: this._config.selectedExotics.length > 0 ? this._config.selectedExotics[0] === -1 ? "None" : {"Some": this._config.selectedExotics[0]} : "All"
+      }).then((results: any) => {
         console.log(results);
         // todo: handle results
         // we don't have a working results-builder at the moment

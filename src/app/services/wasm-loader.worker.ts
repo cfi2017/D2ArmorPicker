@@ -4,9 +4,9 @@ import { BuildConfiguration } from '../data/buildConfiguration';
 
 // Wrap wasm-bindgen exports (the `generate` function) to add time measurement.
 function wrapExports({ compute_results }: any) {
-  return (config: any) => {
+  return async (config: any) => {
     const start = performance.now();
-    const results = compute_results(config);
+    const results = await compute_results(config);
     const time = performance.now() - start;
     return {
       // Little perf boost to transfer data to the main thread w/o copying.
@@ -21,6 +21,7 @@ async function initHandlers() {
     (async () => {
       const singleThread = await import('armor');
       await singleThread.default();
+      singleThread.init_log();
       return wrapExports(singleThread);
     })(),
     (async () => {
@@ -29,6 +30,7 @@ async function initHandlers() {
       const multiThread = await import('@parallel/armor');
       await multiThread.default();
       await multiThread.initThreadPool(navigator.hardwareConcurrency);
+      multiThread.init_log();
       return wrapExports(multiThread);
     })()
   ]);
